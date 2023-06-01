@@ -57,6 +57,7 @@ end
 
 local freestand_key = ui_new_hotkey(t, c, 'freestand_key', true)
 ui_new_label(t, c, ' ')
+local pitch_down = ui_new_hotkey(t, c, '\aB6B665FFOverride pitch down')
 local invert = ui_new_hotkey(t, c, 'Invert anti-aim')
 local build_date = ui_new_label(t, c, 'Updated: May 30th')
 
@@ -112,7 +113,7 @@ local function yaw_jitter(b)
 end
 
 local function run_aa(cmd, b)
-    ui_set(ref.aa.pitch, ui_get(b.pitch))
+    ui_set(ref.aa.pitch, ui_get(pitch_down) and 'Down' or ui_get(b.pitch))
     ui_set(ref.aa.yaw_base, ui_get(b.yaw_base))
     ui_set(ref.aa.yaw_jitter, ui_get(b.yaw_jitter))
     ui_set(ref.aa.yaw_jitter_amount, ui_get(b.yaw_jitter_amount))
@@ -178,7 +179,7 @@ local function update_menu()
         set_vis({builder[i].fs_body_yaw}, master and active == i and override and ui_get(b.body_yaw) ~= 'Off')
     end
 
-    set_vis({selected_state, invert, build_date}, master)
+    set_vis({selected_state, pitch_down, invert, build_date}, master)
     set_vis({freestand_key}, master and override)
     menu_vis(false)
 end
