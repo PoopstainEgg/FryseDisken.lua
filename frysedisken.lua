@@ -1,4 +1,4 @@
-local ui_reference, ui_new_combobox, ui_new_label, ui_new_slider, ui_new_checkbox, ui_new_hotkey, ui_set_visible, ui_get, ui_set, ui_set_callback, client_set_event_callback, client_unset_event_callback, entity_get_local_player, entity_get_prop, entity_is_alive, math_sqrt, globals_curtime, renderer_indicator = ui.reference, ui.new_combobox, ui.new_label, ui.new_slider, ui.new_checkbox, ui.new_hotkey, ui.set_visible, ui.get, ui.set, ui.set_callback, client.set_event_callback, client.unset_event_callback, entity.get_local_player, entity.get_prop, entity.is_alive, math.sqrt, globals.curtime, renderer.indicator
+local ui_reference, ui_new_combobox, ui_new_label, ui_new_slider, ui_new_checkbox, ui_new_hotkey, ui_set_visible, ui_get, ui_set, ui_set_callback, client_set_event_callback, client_unset_event_callback, entity_get_local_player, entity_get_prop, entity_is_alive, math_sqrt, globals_curtime, renderer_indicator, bit_band = ui.reference, ui.new_combobox, ui.new_label, ui.new_slider, ui.new_checkbox, ui.new_hotkey, ui.set_visible, ui.get, ui.set, ui.set_callback, client.set_event_callback, client.unset_event_callback, entity.get_local_player, entity.get_prop, entity.is_alive, math.sqrt, globals.curtime, renderer.indicator, bit.band
 local t, c = 'AA', 'Anti-aimbot angles'
 
 local ref = {
@@ -29,8 +29,9 @@ local ref = {
 
 local builder = {}
 local var = {
-    states = {'Global', 'Stand', 'Move', 'Walk', 'Duck'},
-    states_idx = {['Global'] = 1, ['Stand'] = 2, ['Move'] = 3, ['Walk'] = 4, ['Duck'] = 5}
+    states = {'Global', 'Stand', 'Move', 'Walk', 'Duck', 'Air', 'Air duck'},
+    states_idx = {['Global'] = 1, ['Stand'] = 2, ['Move'] = 3, ['Walk'] = 4, ['Duck'] = 5, ['Air'] = 6, ['Air duck'] = 7},
+    on_ground_ticks = 0
 }
 local selected_state = ui_new_combobox(t, c, 'State', var.states)
 
@@ -82,12 +83,18 @@ local function get_state()
     local moving = math_sqrt(velocity[1] * velocity[1] + velocity[2] * velocity[2]) >= 2
     local walking = ui_get(ref.misc.slowwalk) and ui_get(ref.misc.slowwalk_key)
     local ducking = entity_get_prop(entity_get_local_player(), 'm_flDuckAmount') > 0.9
+    local flags = entity_get_prop(entity_get_local_player(), 'm_fFlags')
+    local on_ground = bit_band(flags, 1) ~= 0
+    var.on_ground_ticks = on_ground and var.on_ground_ticks + 1 or 0
+    local grounded = var.on_ground_ticks > 3
 
     local conds = {
-        ['Stand'] = not moving and not ducking,
-        ['Move'] = moving and not ducking,
-        ['Walk'] = walking and moving,
-        ['Duck'] = ducking
+        ['Stand'] = grounded and not moving and not ducking,
+        ['Move'] = grounded and moving and not ducking,
+        ['Walk'] = grounded and walking and moving,
+        ['Duck'] = grounded and ducking,
+        ['Air'] = not grounded and not ducking,
+        ['Air duck'] = not grounded and ducking
     }
 
     for k, v in pairs(conds) do
